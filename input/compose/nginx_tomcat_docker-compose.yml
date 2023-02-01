@@ -1,0 +1,18 @@
+version: '3'
+services:
+  tomcat:
+    build: ./tomcat
+    image: tomcat:1
+    container_name: tomcat-1
+    tmpfs:
+      - /run
+      - /tmp
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:ro
+  nginx:
+    build: ./nginx
+    image: nginx-tomcat:1
+    container_name: nginx-tomcat-1
+    ports:
+     - "8080:80"
+     - "8081:3000"
