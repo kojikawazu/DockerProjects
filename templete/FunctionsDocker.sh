@@ -7,29 +7,31 @@
 #
 # -------------------------------------------------------------------------------------
 
+# ------------------------------------------------
 # 二重呼び出し対策
+# ------------------------------------------------
 if [ -n "${FUNCTIONS_DOCKER_KEY}" ]; then
   return 0
 fi
 readonly FUNCTIONS_DOCKER_KEY=FunctionsDocker
 
 # ------------------------------------------------
-#- Lib
+#- Libs
 # ------------------------------------------------
 readonly FUNCTIONS_DOCKER_MYSHELL=${FUNCTIONS_DOCKER_KEY}.sh
-readonly FUNCTIONS_DOCKER_MYDIR=$(/usr/bin/find . -type f -name "${FUNCTIONS_DOCKER_MYSHELL}" -print)
+readonly FUNCTIONS_DOCKER_MYDIR=$(/usr/bin/find $(cd $(/usr/bin/dirname $0) && pwd) -maxdepth 1 -type f -name "${FUNCTIONS_DOCKER_MYSHELL}" -print)
 readonly FUNCTIONS_DOCKER_DIR=$(cd $(/usr/bin/dirname ${FUNCTIONS_DOCKER_MYDIR}) && pwd)
-readonly COMMON_CONSTANTS_SHELL=CommonConstants.sh
-readonly COMMON_FUNCTIONS_SHELL=CommonFunctions.sh
-readonly CONSTANTS_DOCKER_SHELL=ConstantsDocker.sh
 
-if [ ! -e "${FUNCTIONS_DOCKER_DIR}/common/${COMMON_CONSTANTS_SHELL}" ] || 
-   [ ! -e "${FUNCTIONS_DOCKER_DIR}/common/${COMMON_FUNCTIONS_SHELL}" ] || 
+if [ -z "${COMMON_FUNCTIONS_SHELL}" ]; then
+  readonly COMMON_FUNCTIONS_SHELL=CommonFunctions.sh
+fi
+if [ -z "${CONSTANTS_DOCKER_SHELL}" ]; then
+  readonly CONSTANTS_DOCKER_SHELL=ConstantsDocker.sh
+fi
+if [ ! -e "${FUNCTIONS_DOCKER_DIR}/common/${COMMON_FUNCTIONS_SHELL}" ] || 
    [ ! -e "${FUNCTIONS_DOCKER_DIR}/${CONSTANTS_DOCKER_SHELL}" ]; then
   exit 1
 fi
-
-source "${FUNCTIONS_DOCKER_DIR}/common/${COMMON_CONSTANTS_SHELL}"
 source "${FUNCTIONS_DOCKER_DIR}/common/${COMMON_FUNCTIONS_SHELL}"
 source "${FUNCTIONS_DOCKER_DIR}/${CONSTANTS_DOCKER_SHELL}"
 
@@ -119,14 +121,14 @@ pre_tomcat_container(){
   fi
   command_log "Deploy tomcat directory"
   ${CMD_CP} -arfp ${_input_dir}/${TOMCAT_NAME} ${FUNCTIONS_DOCKER_DIR}
-  ${CMD_CHMOD} ${PERMISSION_SUPER} ${_tomcat_dir}
+  ${CMD_CHMOD} ${PERMISSIONS_RWX_RWX_RWX} ${_tomcat_dir}
   command_end_log
 
   if [ ! -f "${_tomcat_from_dir}/${TOMCAT_PACKAGE}" ]; then
     # ------------------------------------------------------------
     # tomcatダウンロード
     # ------------------------------------------------------------
-    ${CMD_MKDIR} -p -m ${PERMISSION_SUPER} ${_tomcat_from_dir}
+    ${CMD_MKDIR} -p -m ${PERMISSIONS_RWX_RWX_RWX} ${_tomcat_from_dir}
     ${CMD_WGET} ${TOMCAT_DOWNLOAD_URL}
     ${CMD_MV} -f ${TOMCAT_PACKAGE} ${_tomcat_from_dir}/
   fi
@@ -157,7 +159,7 @@ pre_nginx_container(){
   fi
   command_log "Deploy nginx directory"
   ${CMD_CP} -arfp ${_input_dir}/${NGINX_NAME} ${FUNCTIONS_DOCKER_DIR}
-  ${CMD_CHMOD} ${PERMISSION_SUPER} ${_nginx_dir}
+  ${CMD_CHMOD} ${PERMISSIONS_RWX_RWX_RWX} ${_nginx_dir}
   command_end_log
 
   end_log "Create nginx docker files."
